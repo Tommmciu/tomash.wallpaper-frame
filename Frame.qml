@@ -33,13 +33,26 @@ Item {
   property var shell: null
   property var settings: ({})
   property var configuredBar: ({})
-  readonly property bool barTransparent: shell && shell.bar && ("transparent" in shell.bar)
-    ? shell.bar.transparent === true
-    : configuredBar.transparent === true
+  // The bar's background look: opaque (solid), glassy (see-through, blurred
+  // behind), or none (fully invisible). The live bar exposes transparent +
+  // glassy bools; the config snapshot stores background as a string. This is a
+  // three-way distinction because glassy is a real third state that reads as
+  // transparent === false — the old boolean could not tell opaque from glassy.
+  readonly property string barLook: shell && shell.bar && ("transparent" in shell.bar)
+    ? (shell.bar.transparent === true ? "none"
+       : shell.bar.glassy === true ? "glassy"
+       : "opaque")
+    : (configuredBar.background === "none" ? "none"
+       : configuredBar.background === "glassy" ? "glassy"
+       : "opaque")
   readonly property bool barHidden: !!(shell && shell.bar && shell.bar.barHidden)
   readonly property string barPosition: shell && shell.bar ? shell.bar.position : (configuredBar.position || "top")
+  // Only show the rounded corner masks when the bar is a solid opaque strip.
+  // Hidden when the bar is glassy (translucent over a blurred background — the
+  // masks would collide with the bar edge) or none (invisible, nothing to
+  // follow). keep hideWhenTransparent for explicit opt-out of the none case.
   readonly property bool frameHidden: settings.enabled === false
-    || (settings.hideWhenTransparent !== false && barTransparent)
+    || barLook !== "opaque"
     || (settings.hideWhenBarHidden === true && barHidden)
   readonly property var corners: Array.isArray(settings.corners)
     ? settings.corners : ["top-left", "top-right", "bottom-left", "bottom-right"]
@@ -95,8 +108,11 @@ Item {
     }
     function status(): string {
       return JSON.stringify({
-        transparent: root.barTransparent,
+        barLook: root.barLook,
+        transparent: root.barLook === "none",
+        glassy: root.barLook === "glassy",
         configuredTransparent: root.configuredBar.transparent === true,
+        configuredBackground: root.configuredBar.background || "opaque",
         hasLiveTransparency: !!(root.shell && root.shell.bar && ("transparent" in root.shell.bar)),
         hidden: root.frameHidden,
         barPosition: root.barPosition,
