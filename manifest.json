@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "tomash.wallpaper-frame",
+  "name": "Wallpaper Frame",
+  "version": "1.1.0",
+  "author": "tomash",
+  "description": "Configurable four-corner desktop frame that follows bar and theme changes",
+  "kinds": ["service"],
+  "entryPoints": {
+    "service": "Frame.qml"
+  }
+}
